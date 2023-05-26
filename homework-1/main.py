@@ -10,15 +10,15 @@ PASSWORD: str = os.getenv('PASSWORD')
 employees_fields = '("first_name", "last_name", "title", "birth_date", "notes")'
 
 
-def get_value(key):
-    """
-    Шаблоны для плейсхолдеров
-    """
+def get_query(key):
     if key == 'customers':
-        return '(%s, %s, %s)'
-    if key == 'employees':
-        return '(%s, %s, %s, %s, %s)'
-    return '(%s, %s, %s, %s, %s)'
+        query = f'INSERT INTO {key} VALUES (%s, %s, %s)'
+    elif key == 'employees':
+        query = f'INSERT INTO {key} ("first_name", "last_name", "title", "birth_date", "notes")' \
+                f'VALUES (%s, %s, %s, %s, %s)'
+    else:
+        query = f'INSERT INTO {key} VALUES (%s, %s, %s, %s, %s)'
+    return query
 
 
 def get_path(key) -> str:
@@ -45,14 +45,14 @@ def connect_to_db(db_name):
     return conn
 
 
-def insert_query(file_csv, key, value, fields=''):
+def insert_query(file_csv, key):
     """
     Вставка данных из файла в таблицу базы данных
     """
     try:
         with connect_to_db('north') as conn:
             with conn.cursor() as cursor:
-                query = f'INSERT INTO {key} {fields} VALUES {value}'
+                query = get_query(key)
                 cursor.executemany(query, file_csv)
 
     finally:
@@ -64,6 +64,6 @@ if __name__ == '__main__':
         file = csv_reader(get_path(key_))
 
         if key_ == 'employees':
-            insert_query(file, key_, get_value(key_), fields=employees_fields)
+            insert_query(file, key_)
         else:
-            insert_query(file, key_, get_value(key_))
+            insert_query(file, key_)
